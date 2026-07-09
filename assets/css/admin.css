@@ -1,0 +1,158 @@
+/* Customs Invoice for WCPDF — admin styles */
+
+.cifw-metabox .cifw-status {
+	margin: 0 0 8px;
+}
+
+.cifw-muted {
+	color: #757575;
+}
+
+/* Modal */
+
+.cifw-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 100100;
+	background: rgba(0, 0, 0, 0.55);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.cifw-modal {
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+	width: 100%;
+	max-width: 760px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.cifw-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.cifw-modal-header h2 {
+	margin: 0;
+	font-size: 16px;
+}
+
+.cifw-close {
+	background: none;
+	border: none;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+	color: #757575;
+	padding: 4px 8px;
+}
+
+.cifw-close:hover {
+	color: #d63638;
+}
+
+.cifw-modal-body {
+	padding: 16px 20px;
+	overflow-y: auto;
+}
+
+.cifw-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.cifw-field input[type="text"] {
+	width: 100%;
+}
+
+.cifw-items {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 12px;
+}
+
+.cifw-items th,
+.cifw-items td {
+	padding: 8px 6px;
+	border-bottom: 1px solid #f0f0f1;
+	text-align: left;
+	vertical-align: top;
+}
+
+.cifw-items thead th {
+	border-bottom: 2px solid #dcdcde;
+}
+
+.cifw-col-include {
+	width: 30px;
+	text-align: center !important;
+}
+
+.cifw-col-qty {
+	width: 50px;
+	text-align: center !important;
+}
+
+.cifw-col-total {
+	width: 120px;
+	text-align: right !important;
+}
+
+.cifw-col-total input {
+	width: 100%;
+	text-align: right;
+}
+
+.cifw-items input[type="text"],
+.cifw-items textarea {
+	width: 100%;
+	margin-bottom: 4px;
+}
+
+.cifw-items textarea {
+	resize: vertical;
+}
+
+.cifw-right {
+	text-align: right !important;
+	font-weight: 600;
+}
+
+.cifw-total-row td {
+	border-top: 2px solid #dcdcde;
+	font-size: 14px;
+}
+
+.cifw-modal-footer {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	justify-content: flex-end;
+	padding: 12px 20px;
+	border-top: 1px solid #dcdcde;
+	background: #f6f7f7;
+	border-radius: 0 0 4px 4px;
+}
+
+.cifw-feedback {
+	margin-right: auto;
+	color: #007017;
+}
+
+.cifw-feedback.cifw-error {
+	color: #d63638;
+}
+
+.cifw-busy {
+	pointer-events: none;
+	opacity: 0.7;
+}

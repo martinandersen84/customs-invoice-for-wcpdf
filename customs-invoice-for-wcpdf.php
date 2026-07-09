@@ -1,0 +1,74 @@
+<?php
+/**
+ * Plugin Name:       Customs Invoice for WCPDF
+ * Description:       Generates a parallel, customizable customs invoice alongside WooCommerce PDF Invoices & Packing Slips. Same buyer data, invoice number and date; editable product titles, descriptions/materials and amounts. Stored separately — the original invoice is never modified.
+ * Version:           1.0.0
+ * Author:            IDEAA Lab
+ * Author URI:        https://www.ideaalab.com
+ * Text Domain:       customs-invoice-for-wcpdf
+ * Requires at least: 6.0
+ * Requires PHP:      7.4
+ * Requires Plugins:  woocommerce, woocommerce-pdf-invoices-packing-slips
+ * License:           GPL-2.0-or-later
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Auto-update from GitHub
+require_once __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php';
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+PucFactory::buildUpdateChecker(
+	'https://github.com/ideaalab/customs-invoice-for-wcpdf/',
+	__FILE__,
+	'customs-invoice-for-wcpdf'
+);
+
+define( 'CIFW_VERSION', '1.0.0' );
+define( 'CIFW_PLUGIN_FILE', __FILE__ );
+define( 'CIFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'CIFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'CIFW_DOCUMENT_TYPE', 'customs-invoice' );
+define( 'CIFW_META_KEY', '_cifw_customs_data' );
+
+// HPOS compatibility
+add_action( 'before_woocommerce_init', function () {
+	if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+	}
+} );
+
+/**
+ * Check that WooCommerce PDF Invoices & Packing Slips (>= 4.0, WPO\IPS namespace) is available.
+ */
+function cifw_wcpdf_available() {
+	return function_exists( 'WPO_WCPDF' ) && class_exists( '\\WPO\\IPS\\Documents\\OrderDocumentMethods' );
+}
+
+add_action( 'admin_notices', function () {
+	if ( ! function_exists( 'WPO_WCPDF' ) ) {
+		echo '<div class="notice notice-error"><p><strong>Customs Invoice for WCPDF:</strong> requiere el plugin <em>WooCommerce PDF Invoices &amp; Packing Slips</em> (WP Overnight) activo.</p></div>';
+	} elseif ( ! class_exists( '\\WPO\\IPS\\Documents\\OrderDocumentMethods' ) ) {
+		echo '<div class="notice notice-error"><p><strong>Customs Invoice for WCPDF:</strong> requiere <em>WooCommerce PDF Invoices &amp; Packing Slips</em> versión 4.0 o superior.</p></div>';
+	}
+} );
+
+// Register the custom document type with WCPDF
+add_filter( 'wpo_wcpdf_document_classes', function ( $documents ) {
+	if ( class_exists( '\\WPO\\IPS\\Documents\\OrderDocumentMethods' ) ) {
+		require_once CIFW_PLUGIN_DIR . 'includes/class-cifw-document.php';
+		$documents['\\CIFW_Customs_Invoice'] = new \CIFW_Customs_Invoice();
+	}
+	return $documents;
+} );
+
+// PDF content filters (template redirect, items, totals)
+require_once CIFW_PLUGIN_DIR . 'includes/cifw-pdf-filters.php';
+
+// Admin UI (meta box, modal, AJAX endpoints)
+if ( is_admin() ) {
+	require_once CIFW_PLUGIN_DIR . 'includes/class-cifw-admin.php';
+	CIFW_Admin::instance();
+}
