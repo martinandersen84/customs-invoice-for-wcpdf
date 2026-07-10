@@ -19,7 +19,10 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 
 	public function __construct( $order = 0 ) {
 		$this->type  = CIFW_DOCUMENT_TYPE;
-		$this->title = __( 'Customs Invoice', 'customs-invoice-for-wcpdf' );
+		// deliberately not translated: the PDF is addressed to customs officers,
+		// so the default document title stays in English regardless of the site
+		// locale; it is editable per order and filterable
+		$this->title = apply_filters( 'cifw_default_document_title', 'Customs Invoice', $order );
 
 		if ( function_exists( 'WPO_WCPDF' ) ) {
 			$this->icon = WPO_WCPDF()->plugin_url() . '/assets/images/invoice.svg';

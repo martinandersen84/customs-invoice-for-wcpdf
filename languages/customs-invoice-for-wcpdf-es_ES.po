@@ -1,0 +1,145 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Customs Invoice for WCPDF 1.0.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: es_ES\n"
+"Language-Team: IDEAA Lab\n"
+"X-Domain: customs-invoice-for-wcpdf\n"
+
+msgid "requires the WooCommerce PDF Invoices & Packing Slips plugin (WP Overnight) to be active."
+msgstr "requiere el plugin WooCommerce PDF Invoices & Packing Slips (WP Overnight) activo."
+
+msgid "requires WooCommerce PDF Invoices & Packing Slips version 4.0 or higher."
+msgstr "requiere WooCommerce PDF Invoices & Packing Slips versión 4.0 o superior."
+
+msgid "Saving…"
+msgstr "Guardando…"
+
+msgid "Could not save."
+msgstr "No se pudo guardar."
+
+msgid "Generating PDF…"
+msgstr "Generando PDF…"
+
+msgid "PDF generated: %s"
+msgstr "PDF generado: %s"
+
+msgid "Could not generate the PDF."
+msgstr "No se pudo generar el PDF."
+
+msgid "Reset the customs data to the original order values?"
+msgstr "¿Restablecer los datos de aduanas a los valores originales del pedido?"
+
+msgid "Could not reset."
+msgstr "No se pudo restablecer."
+
+msgid "Connection error."
+msgstr "Error de conexión."
+
+msgid "Customs invoice"
+msgstr "Factura de aduanas"
+
+msgid "Customs data saved."
+msgstr "Datos de aduanas guardados."
+
+msgid "No custom data yet."
+msgstr "Sin datos personalizados todavía."
+
+msgid "Download customs PDF"
+msgstr "Descargar PDF de aduanas"
+
+msgid "Customs invoice…"
+msgstr "Factura de aduanas…"
+
+msgid "Customs invoice — Order #%s"
+msgstr "Factura de aduanas — Pedido #%s"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "A new PDF is generated with the same buyer data and the same number and date as the original invoice. The original invoice is <strong>not modified</strong>. If the invoice does not exist yet, it will be created when generating the PDF."
+msgstr "Se genera un PDF nuevo con los mismos datos del comprador y el mismo número y fecha de la factura original. La factura original <strong>no se modifica</strong>. Si la factura aún no existe, se creará al generar el PDF."
+
+msgid "Document title"
+msgstr "Título del documento"
+
+msgid "Include in the customs invoice"
+msgstr "Incluir en la factura de aduanas"
+
+msgid "Product and description / materials"
+msgstr "Producto y descripción / materiales"
+
+msgid "Qty"
+msgstr "Cant."
+
+msgid "Amount (%s)"
+msgstr "Importe (%s)"
+
+msgid "Product title"
+msgstr "Título del producto"
+
+msgid "Description and list of materials"
+msgstr "Descripción y lista de materiales"
+
+msgid "Shipping"
+msgstr "Envío"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Reset"
+msgstr "Restablecer"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Save and generate PDF"
+msgstr "Guardar y generar PDF"
+
+msgid "Invalid request (nonce)."
+msgstr "Petición no válida (nonce)."
+
+msgid "Insufficient permissions."
+msgstr "Sin permisos suficientes."
+
+msgid "Order not found."
+msgstr "Pedido no encontrado."
+
+msgid "Invalid data."
+msgstr "Datos no válidos."
+
+msgid "WooCommerce PDF Invoices & Packing Slips is not available."
+msgstr "WooCommerce PDF Invoices & Packing Slips no está disponible."
+
+msgid "Could not create/load the original invoice (disabled for this order status?)."
+msgstr "No se pudo crear/cargar la factura original (¿deshabilitada para este estado de pedido?)."
+
+msgid "Could not load the customs document."
+msgstr "No se pudo cargar el documento de aduanas."
+
+msgid "PDF generation returned an empty document."
+msgstr "La generación del PDF devolvió un documento vacío."
+
+msgid "Could not write the PDF to %s"
+msgstr "No se pudo escribir el PDF en %s"
+
+msgid "Error generating the PDF: %s"
+msgstr "Error generando el PDF: %s"
+
+msgid "Data saved."
+msgstr "Datos guardados."
+
+msgid "Data reset."
+msgstr "Datos restablecidos."
+
+msgid "Invalid request."
+msgstr "Petición no válida."
+
+msgid "The customs PDF does not exist. Generate it from the order."
+msgstr "El PDF de aduanas no existe. Genéralo desde el pedido."

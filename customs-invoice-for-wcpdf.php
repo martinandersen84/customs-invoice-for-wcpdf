@@ -6,6 +6,7 @@
  * Author:            IDEAA Lab
  * Author URI:        https://www.ideaalab.com
  * Text Domain:       customs-invoice-for-wcpdf
+ * Domain Path:       /languages
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce, woocommerce-pdf-invoices-packing-slips
@@ -33,6 +34,11 @@ define( 'CIFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CIFW_DOCUMENT_TYPE', 'customs-invoice' );
 define( 'CIFW_META_KEY', '_cifw_customs_data' );
 
+// Translations (English source, Spanish bundled in /languages)
+add_action( 'init', function () {
+	load_plugin_textdomain( 'customs-invoice-for-wcpdf', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}, 1 );
+
 // HPOS compatibility
 add_action( 'before_woocommerce_init', function () {
 	if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
@@ -49,9 +55,15 @@ function cifw_wcpdf_available() {
 
 add_action( 'admin_notices', function () {
 	if ( ! function_exists( 'WPO_WCPDF' ) ) {
-		echo '<div class="notice notice-error"><p><strong>Customs Invoice for WCPDF:</strong> requiere el plugin <em>WooCommerce PDF Invoices &amp; Packing Slips</em> (WP Overnight) activo.</p></div>';
+		printf(
+			'<div class="notice notice-error"><p><strong>Customs Invoice for WCPDF:</strong> %s</p></div>',
+			esc_html__( 'requires the WooCommerce PDF Invoices & Packing Slips plugin (WP Overnight) to be active.', 'customs-invoice-for-wcpdf' )
+		);
 	} elseif ( ! class_exists( '\\WPO\\IPS\\Documents\\OrderDocumentMethods' ) ) {
-		echo '<div class="notice notice-error"><p><strong>Customs Invoice for WCPDF:</strong> requiere <em>WooCommerce PDF Invoices &amp; Packing Slips</em> versión 4.0 o superior.</p></div>';
+		printf(
+			'<div class="notice notice-error"><p><strong>Customs Invoice for WCPDF:</strong> %s</p></div>',
+			esc_html__( 'requires WooCommerce PDF Invoices & Packing Slips version 4.0 or higher.', 'customs-invoice-for-wcpdf' )
+		);
 	}
 } );
 

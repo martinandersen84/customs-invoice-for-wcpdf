@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin UI: order meta box with the "Factura de aduanas" button, the editing
+ * Admin UI: order meta box with the "Customs invoice" button, the editing
  * modal (pre-filled with the real order data) and the AJAX endpoints to save
  * the customs data, generate the PDF and download it.
  */
@@ -36,6 +36,11 @@ class CIFW_Admin {
 		return function_exists( 'wc_get_page_screen_id' ) ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
 	}
 
+	private function get_default_document_title( $order = null ) {
+		// English on purpose: the PDF is addressed to customs officers (see CIFW_Customs_Invoice)
+		return apply_filters( 'cifw_default_document_title', 'Customs Invoice', $order );
+	}
+
 	public function add_meta_box() {
 		if ( ! cifw_wcpdf_available() ) {
 			return;
@@ -43,7 +48,7 @@ class CIFW_Admin {
 
 		add_meta_box(
 			'cifw-meta-box',
-			'Factura de aduanas',
+			__( 'Customs invoice', 'customs-invoice-for-wcpdf' ),
 			array( $this, 'render_meta_box' ),
 			$this->get_order_screen_id(),
 			'side',
@@ -59,6 +64,17 @@ class CIFW_Admin {
 
 		wp_enqueue_style( 'cifw-admin', CIFW_PLUGIN_URL . 'assets/css/admin.css', array(), CIFW_VERSION );
 		wp_enqueue_script( 'cifw-admin', CIFW_PLUGIN_URL . 'assets/js/admin.js', array(), CIFW_VERSION, true );
+		wp_localize_script( 'cifw-admin', 'cifwL10n', array(
+			'saving'        => __( 'Saving…', 'customs-invoice-for-wcpdf' ),
+			'saveError'     => __( 'Could not save.', 'customs-invoice-for-wcpdf' ),
+			'generating'    => __( 'Generating PDF…', 'customs-invoice-for-wcpdf' ),
+			/* translators: %s: PDF filename */
+			'generated'     => __( 'PDF generated: %s', 'customs-invoice-for-wcpdf' ),
+			'generateError' => __( 'Could not generate the PDF.', 'customs-invoice-for-wcpdf' ),
+			'resetConfirm'  => __( 'Reset the customs data to the original order values?', 'customs-invoice-for-wcpdf' ),
+			'resetError'    => __( 'Could not reset.', 'customs-invoice-for-wcpdf' ),
+			'connError'     => __( 'Connection error.', 'customs-invoice-for-wcpdf' ),
+		) );
 	}
 
 	/**
@@ -79,20 +95,25 @@ class CIFW_Admin {
 		echo '<div class="cifw-metabox">';
 
 		if ( ! empty( $data ) ) {
-			echo '<p class="cifw-status">✔ Datos de aduanas guardados.</p>';
+			echo '<p class="cifw-status">✔ ' . esc_html__( 'Customs data saved.', 'customs-invoice-for-wcpdf' ) . '</p>';
 		} else {
-			echo '<p class="cifw-status cifw-muted">Sin datos personalizados todavía.</p>';
+			echo '<p class="cifw-status cifw-muted">' . esc_html__( 'No custom data yet.', 'customs-invoice-for-wcpdf' ) . '</p>';
 		}
 
 		if ( $pdf_file && $generated_at ) {
 			printf(
-				'<p class="cifw-status">PDF generado: %s<br><a href="%s" target="_blank">Descargar PDF de aduanas</a></p>',
-				esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $generated_at ) ),
-				esc_url( $this->get_download_url( $order->get_id() ) )
+				'<p class="cifw-status">%s<br><a href="%s" target="_blank">%s</a></p>',
+				sprintf(
+					/* translators: %s: date and time */
+					esc_html__( 'PDF generated: %s', 'customs-invoice-for-wcpdf' ),
+					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $generated_at ) )
+				),
+				esc_url( $this->get_download_url( $order->get_id() ) ),
+				esc_html__( 'Download customs PDF', 'customs-invoice-for-wcpdf' )
 			);
 		}
 
-		echo '<button type="button" class="button button-primary cifw-open-modal">Factura de aduanas…</button>';
+		echo '<button type="button" class="button button-primary cifw-open-modal">' . esc_html__( 'Customs invoice…', 'customs-invoice-for-wcpdf' ) . '</button>';
 		echo '</div>';
 
 		$this->render_modal( $order, $data );
@@ -112,7 +133,7 @@ class CIFW_Admin {
 	private function render_modal( $order, $data ) {
 		$items           = $order->get_items();
 		$saved_items     = isset( $data['items'] ) && is_array( $data['items'] ) ? $data['items'] : array();
-		$document_title  = ! empty( $data['document_title'] ) ? $data['document_title'] : 'Customs Invoice';
+		$document_title  = ! empty( $data['document_title'] ) ? $data['document_title'] : $this->get_default_document_title( $order );
 		$shipping        = isset( $data['shipping'] ) ? $data['shipping'] : wc_format_decimal( $order->get_shipping_total(), 2 );
 		$currency_symbol = get_woocommerce_currency_symbol( $order->get_currency() );
 		?>
@@ -123,25 +144,41 @@ class CIFW_Admin {
 			data-ajaxurl="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
 			<div class="cifw-modal">
 				<div class="cifw-modal-header">
-					<h2>Factura de aduanas — Pedido #<?php echo esc_html( $order->get_order_number() ); ?></h2>
-					<button type="button" class="cifw-close" aria-label="Cerrar">&times;</button>
+					<h2>
+						<?php
+						printf(
+							/* translators: %s: order number */
+							esc_html__( 'Customs invoice — Order #%s', 'customs-invoice-for-wcpdf' ),
+							esc_html( $order->get_order_number() )
+						);
+						?>
+					</h2>
+					<button type="button" class="cifw-close" aria-label="<?php esc_attr_e( 'Close', 'customs-invoice-for-wcpdf' ); ?>">&times;</button>
 				</div>
 
 				<div class="cifw-modal-body">
-					<p class="cifw-muted">Se genera un PDF nuevo con los mismos datos del comprador y el mismo número y fecha de la factura original. La factura original <strong>no se modifica</strong>. Si la factura aún no existe, se creará al generar el PDF.</p>
+					<p class="cifw-muted"><?php echo wp_kses_post( __( 'A new PDF is generated with the same buyer data and the same number and date as the original invoice. The original invoice is <strong>not modified</strong>. If the invoice does not exist yet, it will be created when generating the PDF.', 'customs-invoice-for-wcpdf' ) ); ?></p>
 
 					<p class="cifw-field">
-						<label>Título del documento</label>
+						<label><?php esc_html_e( 'Document title', 'customs-invoice-for-wcpdf' ); ?></label>
 						<input type="text" id="cifw-document-title" value="<?php echo esc_attr( $document_title ); ?>">
 					</p>
 
 					<table class="cifw-items">
 						<thead>
 							<tr>
-								<th class="cifw-col-include" title="Incluir en la factura de aduanas">✔</th>
-								<th>Producto y descripción / materiales</th>
-								<th class="cifw-col-qty">Cant.</th>
-								<th class="cifw-col-total">Importe (<?php echo esc_html( $currency_symbol ); ?>)</th>
+								<th class="cifw-col-include" title="<?php esc_attr_e( 'Include in the customs invoice', 'customs-invoice-for-wcpdf' ); ?>">✔</th>
+								<th><?php esc_html_e( 'Product and description / materials', 'customs-invoice-for-wcpdf' ); ?></th>
+								<th class="cifw-col-qty"><?php esc_html_e( 'Qty', 'customs-invoice-for-wcpdf' ); ?></th>
+								<th class="cifw-col-total">
+									<?php
+									printf(
+										/* translators: %s: currency symbol */
+										esc_html__( 'Amount (%s)', 'customs-invoice-for-wcpdf' ),
+										esc_html( $currency_symbol )
+									);
+									?>
+								</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -157,8 +194,8 @@ class CIFW_Admin {
 										<input type="checkbox" data-field="include" <?php checked( $include ); ?>>
 									</td>
 									<td>
-										<input type="text" data-field="name" value="<?php echo esc_attr( $name ); ?>" placeholder="Título del producto">
-										<textarea data-field="description" rows="2" placeholder="Descripción y lista de materiales"><?php echo esc_textarea( $desc ); ?></textarea>
+										<input type="text" data-field="name" value="<?php echo esc_attr( $name ); ?>" placeholder="<?php esc_attr_e( 'Product title', 'customs-invoice-for-wcpdf' ); ?>">
+										<textarea data-field="description" rows="2" placeholder="<?php esc_attr_e( 'Description and list of materials', 'customs-invoice-for-wcpdf' ); ?>"><?php echo esc_textarea( $desc ); ?></textarea>
 									</td>
 									<td class="cifw-col-qty"><?php echo esc_html( $item->get_quantity() ); ?></td>
 									<td class="cifw-col-total">
@@ -169,11 +206,11 @@ class CIFW_Admin {
 						</tbody>
 						<tfoot>
 							<tr>
-								<td colspan="3" class="cifw-right">Envío</td>
+								<td colspan="3" class="cifw-right"><?php esc_html_e( 'Shipping', 'customs-invoice-for-wcpdf' ); ?></td>
 								<td class="cifw-col-total"><input type="number" step="0.01" min="0" id="cifw-shipping" value="<?php echo esc_attr( $shipping ); ?>"></td>
 							</tr>
 							<tr class="cifw-total-row">
-								<td colspan="3" class="cifw-right">Total</td>
+								<td colspan="3" class="cifw-right"><?php esc_html_e( 'Total', 'customs-invoice-for-wcpdf' ); ?></td>
 								<td class="cifw-col-total"><strong id="cifw-total">—</strong></td>
 							</tr>
 						</tfoot>
@@ -182,10 +219,10 @@ class CIFW_Admin {
 
 				<div class="cifw-modal-footer">
 					<span class="cifw-feedback" id="cifw-feedback"></span>
-					<button type="button" class="button cifw-reset">Restablecer</button>
-					<button type="button" class="button cifw-cancel">Cancelar</button>
-					<button type="button" class="button cifw-save">Guardar</button>
-					<button type="button" class="button button-primary cifw-generate">Guardar y generar PDF</button>
+					<button type="button" class="button cifw-reset"><?php esc_html_e( 'Reset', 'customs-invoice-for-wcpdf' ); ?></button>
+					<button type="button" class="button cifw-cancel"><?php esc_html_e( 'Cancel', 'customs-invoice-for-wcpdf' ); ?></button>
+					<button type="button" class="button cifw-save"><?php esc_html_e( 'Save', 'customs-invoice-for-wcpdf' ); ?></button>
+					<button type="button" class="button button-primary cifw-generate"><?php esc_html_e( 'Save and generate PDF', 'customs-invoice-for-wcpdf' ); ?></button>
 				</div>
 			</div>
 		</div>
@@ -205,15 +242,15 @@ class CIFW_Admin {
 		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 
 		if ( ! $order_id || ! check_ajax_referer( 'cifw_edit_' . $order_id, 'nonce', false ) ) {
-			wp_send_json_error( array( 'message' => 'Petición no válida (nonce).' ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Invalid request (nonce).', 'customs-invoice-for-wcpdf' ) ), 403 );
 		}
 		if ( ! current_user_can( self::CAPABILITY ) ) {
-			wp_send_json_error( array( 'message' => 'Sin permisos.' ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'customs-invoice-for-wcpdf' ) ), 403 );
 		}
 
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			wp_send_json_error( array( 'message' => 'Pedido no encontrado.' ), 404 );
+			wp_send_json_error( array( 'message' => __( 'Order not found.', 'customs-invoice-for-wcpdf' ) ), 404 );
 		}
 
 		return $order;
@@ -225,7 +262,7 @@ class CIFW_Admin {
 	private function save_customs_data( $order ) {
 		$raw = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : null;
 		if ( ! is_array( $raw ) ) {
-			wp_send_json_error( array( 'message' => 'Datos no válidos.' ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Invalid data.', 'customs-invoice-for-wcpdf' ) ), 400 );
 		}
 
 		$items       = array();
@@ -247,7 +284,9 @@ class CIFW_Admin {
 		}
 
 		$data = array(
-			'document_title' => isset( $raw['document_title'] ) ? sanitize_text_field( $raw['document_title'] ) : 'Customs Invoice',
+			'document_title' => isset( $raw['document_title'] ) && '' !== trim( $raw['document_title'] )
+				? sanitize_text_field( $raw['document_title'] )
+				: $this->get_default_document_title( $order ),
 			'shipping'       => isset( $raw['shipping'] ) && '' !== $raw['shipping'] ? wc_format_decimal( $raw['shipping'], 2 ) : '0',
 			'items'          => $items,
 			'updated_at'     => time(),
@@ -262,7 +301,7 @@ class CIFW_Admin {
 	public function ajax_save() {
 		$order = $this->validate_request();
 		$this->save_customs_data( $order );
-		wp_send_json_success( array( 'message' => 'Datos guardados.' ) );
+		wp_send_json_success( array( 'message' => __( 'Data saved.', 'customs-invoice-for-wcpdf' ) ) );
 	}
 
 	public function ajax_generate() {
@@ -270,7 +309,7 @@ class CIFW_Admin {
 		$this->save_customs_data( $order );
 
 		if ( ! cifw_wcpdf_available() ) {
-			wp_send_json_error( array( 'message' => 'WooCommerce PDF Invoices & Packing Slips no está disponible.' ), 500 );
+			wp_send_json_error( array( 'message' => __( 'WooCommerce PDF Invoices & Packing Slips is not available.', 'customs-invoice-for-wcpdf' ) ), 500 );
 		}
 
 		try {
@@ -278,17 +317,17 @@ class CIFW_Admin {
 			// (same effect as clicking the Invoice button in WCPDF)
 			$invoice = wcpdf_get_document( 'invoice', $order, true );
 			if ( ! $invoice ) {
-				wp_send_json_error( array( 'message' => 'No se pudo crear/cargar la factura original (¿deshabilitada para este estado de pedido?).' ), 500 );
+				wp_send_json_error( array( 'message' => __( 'Could not create/load the original invoice (disabled for this order status?).', 'customs-invoice-for-wcpdf' ) ), 500 );
 			}
 
 			$document = wcpdf_get_document( CIFW_DOCUMENT_TYPE, $order );
 			if ( ! $document ) {
-				wp_send_json_error( array( 'message' => 'No se pudo cargar el documento de aduanas.' ), 500 );
+				wp_send_json_error( array( 'message' => __( 'Could not load the customs document.', 'customs-invoice-for-wcpdf' ) ), 500 );
 			}
 
 			$pdf = $document->get_pdf();
 			if ( empty( $pdf ) ) {
-				wp_send_json_error( array( 'message' => 'La generación del PDF devolvió un documento vacío.' ), 500 );
+				wp_send_json_error( array( 'message' => __( 'PDF generation returned an empty document.', 'customs-invoice-for-wcpdf' ) ), 500 );
 			}
 
 			$filename = $document->get_filename();
@@ -296,7 +335,10 @@ class CIFW_Admin {
 			$written  = file_put_contents( trailingslashit( $dir ) . $filename, $pdf );
 
 			if ( false === $written ) {
-				wp_send_json_error( array( 'message' => 'No se pudo escribir el PDF en ' . $dir ), 500 );
+				wp_send_json_error( array(
+					/* translators: %s: directory path */
+					'message' => sprintf( __( 'Could not write the PDF to %s', 'customs-invoice-for-wcpdf' ), $dir ),
+				), 500 );
 			}
 
 			$order->update_meta_data( '_cifw_pdf_file', $filename );
@@ -304,12 +346,15 @@ class CIFW_Admin {
 			$order->save_meta_data();
 
 			wp_send_json_success( array(
-				'message'      => 'PDF generado.',
+				'message'      => __( 'PDF generated.', 'customs-invoice-for-wcpdf' ),
 				'download_url' => $this->get_download_url( $order->get_id() ),
 				'filename'     => $filename,
 			) );
 		} catch ( \Throwable $e ) {
-			wp_send_json_error( array( 'message' => 'Error generando el PDF: ' . $e->getMessage() ), 500 );
+			wp_send_json_error( array(
+				/* translators: %s: error message */
+				'message' => sprintf( __( 'Error generating the PDF: %s', 'customs-invoice-for-wcpdf' ), $e->getMessage() ),
+			), 500 );
 		}
 	}
 
@@ -317,7 +362,7 @@ class CIFW_Admin {
 		$order = $this->validate_request();
 		$order->delete_meta_data( CIFW_META_KEY );
 		$order->save_meta_data();
-		wp_send_json_success( array( 'message' => 'Datos restablecidos.' ) );
+		wp_send_json_success( array( 'message' => __( 'Data reset.', 'customs-invoice-for-wcpdf' ) ) );
 	}
 
 	/**
@@ -329,7 +374,7 @@ class CIFW_Admin {
 		$nonce    = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
 
 		if ( ! $order_id || ! wp_verify_nonce( $nonce, 'cifw_download_' . $order_id ) || ! current_user_can( self::CAPABILITY ) ) {
-			wp_die( 'Petición no válida.', '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Invalid request.', 'customs-invoice-for-wcpdf' ), '', array( 'response' => 403 ) );
 		}
 
 		$order = wc_get_order( $order_id );
@@ -337,7 +382,7 @@ class CIFW_Admin {
 		$path  = trailingslashit( $this->get_storage_dir() ) . basename( $file );
 
 		if ( ! $file || ! file_exists( $path ) ) {
-			wp_die( 'El PDF de aduanas no existe. Genéralo desde el pedido.', '', array( 'response' => 404 ) );
+			wp_die( esc_html__( 'The customs PDF does not exist. Generate it from the order.', 'customs-invoice-for-wcpdf' ), '', array( 'response' => 404 ) );
 		}
 
 		nocache_headers();

@@ -1,0 +1,147 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Customs Invoice for WCPDF 1.0.0
+"
+"MIME-Version: 1.0
+"
+"Content-Type: text/plain; charset=UTF-8
+"
+"Content-Transfer-Encoding: 8bit
+"
+"X-Domain: customs-invoice-for-wcpdf
+"
+
+msgid "requires the WooCommerce PDF Invoices & Packing Slips plugin (WP Overnight) to be active."
+msgstr ""
+
+msgid "requires WooCommerce PDF Invoices & Packing Slips version 4.0 or higher."
+msgstr ""
+
+msgid "Saving…"
+msgstr ""
+
+msgid "Could not save."
+msgstr ""
+
+msgid "Generating PDF…"
+msgstr ""
+
+msgid "PDF generated: %s"
+msgstr ""
+
+msgid "Could not generate the PDF."
+msgstr ""
+
+msgid "Reset the customs data to the original order values?"
+msgstr ""
+
+msgid "Could not reset."
+msgstr ""
+
+msgid "Connection error."
+msgstr ""
+
+msgid "Customs invoice"
+msgstr ""
+
+msgid "Customs data saved."
+msgstr ""
+
+msgid "No custom data yet."
+msgstr ""
+
+msgid "Download customs PDF"
+msgstr ""
+
+msgid "Customs invoice…"
+msgstr ""
+
+msgid "Customs invoice — Order #%s"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "A new PDF is generated with the same buyer data and the same number and date as the original invoice. The original invoice is <strong>not modified</strong>. If the invoice does not exist yet, it will be created when generating the PDF."
+msgstr ""
+
+msgid "Document title"
+msgstr ""
+
+msgid "Include in the customs invoice"
+msgstr ""
+
+msgid "Product and description / materials"
+msgstr ""
+
+msgid "Qty"
+msgstr ""
+
+msgid "Amount (%s)"
+msgstr ""
+
+msgid "Product title"
+msgstr ""
+
+msgid "Description and list of materials"
+msgstr ""
+
+msgid "Shipping"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save and generate PDF"
+msgstr ""
+
+msgid "Invalid request (nonce)."
+msgstr ""
+
+msgid "Insufficient permissions."
+msgstr ""
+
+msgid "Order not found."
+msgstr ""
+
+msgid "Invalid data."
+msgstr ""
+
+msgid "WooCommerce PDF Invoices & Packing Slips is not available."
+msgstr ""
+
+msgid "Could not create/load the original invoice (disabled for this order status?)."
+msgstr ""
+
+msgid "Could not load the customs document."
+msgstr ""
+
+msgid "PDF generation returned an empty document."
+msgstr ""
+
+msgid "Could not write the PDF to %s"
+msgstr ""
+
+msgid "Error generating the PDF: %s"
+msgstr ""
+
+msgid "Data saved."
+msgstr ""
+
+msgid "Data reset."
+msgstr ""
+
+msgid "Invalid request."
+msgstr ""
+
+msgid "The customs PDF does not exist. Generate it from the order."
+msgstr ""

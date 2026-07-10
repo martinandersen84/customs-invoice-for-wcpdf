@@ -2,6 +2,13 @@
 (function () {
 	'use strict';
 
+	var l10n = window.cifwL10n || {};
+
+	function t(key, fallback, arg) {
+		var s = l10n[key] || fallback;
+		return arg !== undefined ? s.replace('%s', arg) : s;
+	}
+
 	function init() {
 		var modal = document.getElementById('cifw-modal');
 		var openBtn = document.querySelector('.cifw-open-modal');
@@ -104,27 +111,27 @@
 
 		modal.querySelector('.cifw-save').addEventListener('click', function () {
 			busy(true);
-			setFeedback('Guardando…');
+			setFeedback(t('saving', 'Saving…'));
 			post('cifw_save', true).then(function (res) {
 				busy(false);
 				if (res.success) {
 					setFeedback(res.data.message);
 				} else {
-					setFeedback((res.data && res.data.message) || 'Error al guardar.', true);
+					setFeedback((res.data && res.data.message) || t('saveError', 'Could not save.'), true);
 				}
 			}).catch(function () {
 				busy(false);
-				setFeedback('Error de conexión.', true);
+				setFeedback(t('connError', 'Connection error.'), true);
 			});
 		});
 
 		modal.querySelector('.cifw-generate').addEventListener('click', function () {
 			busy(true);
-			setFeedback('Generando PDF…');
+			setFeedback(t('generating', 'Generating PDF…'));
 			post('cifw_generate', true).then(function (res) {
 				busy(false);
 				if (res.success) {
-					setFeedback('PDF generado: ' + res.data.filename);
+					setFeedback(t('generated', 'PDF generated: %s', res.data.filename));
 					// trigger the download without leaving the page
 					var link = document.createElement('a');
 					link.href = res.data.download_url;
@@ -134,16 +141,16 @@
 					// refresh so the meta box shows the download link
 					window.setTimeout(function () { window.location.reload(); }, 1500);
 				} else {
-					setFeedback((res.data && res.data.message) || 'Error al generar el PDF.', true);
+					setFeedback((res.data && res.data.message) || t('generateError', 'Could not generate the PDF.'), true);
 				}
 			}).catch(function () {
 				busy(false);
-				setFeedback('Error de conexión.', true);
+				setFeedback(t('connError', 'Connection error.'), true);
 			});
 		});
 
 		modal.querySelector('.cifw-reset').addEventListener('click', function () {
-			if (!window.confirm('¿Restablecer los datos de aduanas a los valores originales del pedido?')) {
+			if (!window.confirm(t('resetConfirm', 'Reset the customs data to the original order values?'))) {
 				return;
 			}
 			busy(true);
@@ -152,11 +159,11 @@
 				if (res.success) {
 					window.location.reload();
 				} else {
-					setFeedback((res.data && res.data.message) || 'Error al restablecer.', true);
+					setFeedback((res.data && res.data.message) || t('resetError', 'Could not reset.'), true);
 				}
 			}).catch(function () {
 				busy(false);
-				setFeedback('Error de conexión.', true);
+				setFeedback(t('connError', 'Connection error.'), true);
 			});
 		});
 	}
