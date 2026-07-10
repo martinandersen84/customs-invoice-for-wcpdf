@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Customs Invoice for WCPDF 1.0.0
+"Project-Id-Version: Customs Invoice for WCPDF 0.1.0
 "
 "MIME-Version: 1.0
 "
