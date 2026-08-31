@@ -3,7 +3,7 @@
 Generates a parallel, customizable **customs invoice** alongside [WooCommerce PDF Invoices & Packing Slips](https://wordpress.org/plugins/woocommerce-pdf-invoices-packing-slips/) (WP Overnight). Customs authorities increasingly require a description and list of materials for every product; this plugin lets you edit the product titles, descriptions and amounts of a per-order customs document **without ever touching the real invoice**.
 
 - **Slug:** `customs-invoice-for-wcpdf`
-- **Version:** 0.1.0
+- **Version:** 0.1.1
 - **Author:** IDEAA Lab
 - **Requires:** WordPress 6.0+, PHP 7.4+, WooCommerce, WooCommerce PDF Invoices & Packing Slips 4.0+ (free or Pro)
 - **Text domain:** `customs-invoice-for-wcpdf` (English source, Spanish `es_ES` translation bundled)
@@ -62,6 +62,9 @@ Note: the default document title printed on the PDF is deliberately *Customs Inv
 Updates are delivered from this GitHub repository via the bundled [plugin-update-checker](https://github.com/YahnisElsts/plugin-update-checker); they appear in the regular WordPress updates screen. To ship a new version: bump the `Version:` header, commit, and push a `v*` tag — the release workflow builds the ZIP automatically.
 
 ## Changelog
+
+### 0.1.1
+- The customs invoice now inherits the invoice configuration through the WCPDF settings option itself, so Professional features that read per-document settings (shop VAT/COC number and the like) are applied exactly as on the real invoice.
 
 ### 0.1.0
 - Initial release: customs invoice document type, order modal editor, PDF generation to a separate folder, English/Spanish i18n, GitHub auto-updates.

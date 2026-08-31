@@ -32,54 +32,10 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	}
 
 	/**
-	 * Inherit the invoice display settings (logo already comes from the common
-	 * settings) so the customs invoice looks exactly like the real invoice.
-	 * Automation-related settings (email attachments, My Account, columns...)
-	 * are stripped: this document is only ever generated manually.
+	 * Settings come from the virtual option filtered in cifw-settings.php
+	 * (the invoice settings, minus automation), merged by the parent with the
+	 * common settings. Nothing document-specific is stored for this type.
 	 */
-	public function get_settings( $latest = false, $output_format = 'pdf' ) {
-		$common   = WPO_WCPDF()->settings->get_common_document_settings();
-		$invoice  = WPO_WCPDF()->settings->get_document_settings( 'invoice', $output_format );
-		$own      = WPO_WCPDF()->settings->get_document_settings( $this->get_type(), $output_format );
-		$settings = (array) $own + (array) $invoice + (array) $common;
-
-		unset(
-			$settings['attach_to_email_ids'],
-			$settings['include_email_link'],
-			$settings['include_email_link_placement'],
-			$settings['my_account_buttons'],
-			$settings['my_account_restrict'],
-			$settings['disable_for_statuses'],
-			$settings['disable_free'],
-			$settings['due_date'],
-			$settings['mark_printed'],
-			$settings['unmark_printed'],
-			$settings['invoice_number_column'],
-			$settings['invoice_date_column'],
-			$settings['invoice_number_search'],
-			$settings['invoice_number_partial_search']
-		);
-
-		// these were checkboxes and are now selects that may be set but empty
-		if ( array_key_exists( 'display_date', $settings ) && empty( $settings['display_date'] ) ) {
-			unset( $settings['display_date'] );
-		}
-		if ( array_key_exists( 'display_number', $settings ) && empty( $settings['display_number'] ) ) {
-			unset( $settings['display_number'] );
-		}
-
-		// a customs invoice without number/date is useless: force them on
-		if ( ! isset( $settings['display_number'] ) ) {
-			$settings['display_number'] = 'invoice_number';
-		}
-		if ( ! isset( $settings['display_date'] ) ) {
-			$settings['display_date'] = 'document_date';
-		}
-
-		$settings['enabled'] = 1;
-
-		return apply_filters( 'cifw_document_settings', $settings, $this );
-	}
 
 	public function use_historical_settings() {
 		return false;

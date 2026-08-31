@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Customs Invoice for WCPDF
  * Description:       Generates a parallel, customizable customs invoice alongside WooCommerce PDF Invoices & Packing Slips. Same buyer data, invoice number and date; editable product titles, descriptions/materials and amounts. Stored separately — the original invoice is never modified.
- * Version:           0.1.0
+ * Version:           0.1.1
  * Author:            IDEAA Lab
  * Author URI:        https://www.ideaalab.com
  * Text Domain:       customs-invoice-for-wcpdf
@@ -27,7 +27,7 @@ PucFactory::buildUpdateChecker(
 	'customs-invoice-for-wcpdf'
 );
 
-define( 'CIFW_VERSION', '0.1.0' );
+define( 'CIFW_VERSION', '0.1.1' );
 define( 'CIFW_PLUGIN_FILE', __FILE__ );
 define( 'CIFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CIFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -66,6 +66,9 @@ add_action( 'admin_notices', function () {
 		);
 	}
 } );
+
+// Settings inheritance: make the customs invoice read the invoice configuration
+require_once CIFW_PLUGIN_DIR . 'includes/cifw-settings.php';
 
 // Register the custom document type with WCPDF
 add_filter( 'wpo_wcpdf_document_classes', function ( $documents ) {
