@@ -9,6 +9,73 @@
 		return arg !== undefined ? s.replace('%s', arg) : s;
 	}
 
+	/*
+	 * Proportion mode — mirrors includes/cifw-amounts.php step by step, on
+	 * integer cents, so the preview and the PDF always show the same figures.
+	 */
+
+	// half up, as cifw_scale_cents()
+	function scaleCents(cents, percent) {
+		return Math.floor((cents * percent + 50) / 100);
+	}
+
+	// largest remainder method, as cifw_scale_lines(); lines = [{id, cents}]
+	function scaleLines(lines, percent) {
+		var scaled = {};
+		var remainders = [];
+		var sum = 0;
+		var sumFloor = 0;
+
+		lines.forEach(function (line, position) {
+			var exact = line.cents * percent;
+			var floor = Math.floor(exact / 100);
+			scaled[line.id] = floor;
+			remainders.push([exact - 100 * floor, position, line.id]);
+			sum += line.cents;
+			sumFloor += floor;
+		});
+
+		remainders.sort(function (a, b) {
+			return a[0] === b[0] ? a[1] - b[1] : b[0] - a[0];
+		});
+
+		var missing = scaleCents(sum, percent) - sumFloor;
+		for (var i = 0; i < missing && i < remainders.length; i++) {
+			scaled[remainders[i][2]] += 1;
+		}
+		return scaled;
+	}
+
+	// as cifw_compute_proportional_amounts(); includedIds in display order
+	function computeProportional(base, includedIds, percent) {
+		var lines = includedIds.map(function (id) {
+			return { id: id, cents: base.items[id] ? base.items[id].amount : 0 };
+		});
+		var items = scaleLines(lines, percent);
+		var allIncluded = includedIds.length === Object.keys(base.items).length;
+		var shippingTaxes = base.shipping.taxes || {};
+
+		var taxes = base.rates.map(function (rate) {
+			var cents;
+			if (allIncluded) {
+				cents = rate.full;
+			} else {
+				cents = shippingTaxes[rate.id] || 0;
+				includedIds.forEach(function (id) {
+					var itemTaxes = (base.items[id] && base.items[id].taxes) || {};
+					cents += itemTaxes[rate.id] || 0;
+				});
+			}
+			return { label: rate.label, amount: scaleCents(cents, percent) };
+		});
+
+		return {
+			items: items,
+			shipping: scaleCents(base.shipping.amount, percent),
+			taxes: taxes
+		};
+	}
+
 	function init() {
 		var modal = document.getElementById('cifw-modal');
 		var openBtn = document.querySelector('.cifw-open-modal');
@@ -24,9 +91,34 @@
 		var nonce = modal.dataset.nonce;
 		var currency = modal.dataset.currency || '';
 		var feedback = document.getElementById('cifw-feedback');
+		var proportionSelect = document.getElementById('cifw-proportion');
+		var proportionHint = document.getElementById('cifw-proportion-hint');
+		var shippingInput = document.getElementById('cifw-shipping');
+		var totalRow = modal.querySelector('.cifw-total-row');
+		var base = null;
+
+		try {
+			base = JSON.parse(modal.dataset.base || 'null');
+		} catch (e) {
+			base = null;
+		}
+		if (!base) {
+			// without the order amounts only custom values can work
+			proportionSelect.value = 'custom';
+			proportionSelect.disabled = true;
+		}
+
+		function money(cents) {
+			return (cents / 100).toFixed(2);
+		}
+
+		function isCustom() {
+			return proportionSelect.value === 'custom';
+		}
 
 		function open() {
 			modal.style.display = 'flex';
+			applyMode();
 			recalc();
 		}
 
@@ -40,7 +132,89 @@
 			feedback.classList.toggle('cifw-error', !!isError);
 		}
 
+		function setTaxRows(rows) {
+			modal.querySelectorAll('.cifw-tax-row').forEach(function (row) {
+				row.remove();
+			});
+			rows.forEach(function (tax) {
+				var tr = document.createElement('tr');
+				tr.className = 'cifw-tax-row';
+				var label = document.createElement('td');
+				label.colSpan = 3;
+				label.className = 'cifw-right';
+				label.textContent = tax.label;
+				var value = document.createElement('td');
+				value.className = 'cifw-col-total';
+				value.textContent = money(tax.amount) + ' ' + currency;
+				tr.appendChild(label);
+				tr.appendChild(value);
+				totalRow.parentNode.insertBefore(tr, totalRow);
+			});
+		}
+
+		function recalcProportional(percent) {
+			var includedIds = [];
+			modal.querySelectorAll('.cifw-item').forEach(function (row) {
+				if (row.querySelector('[data-field="include"]').checked) {
+					includedIds.push(row.dataset.itemId);
+				}
+			});
+
+			var amounts = computeProportional(base, includedIds, percent);
+			var total = amounts.shipping;
+
+			modal.querySelectorAll('.cifw-item').forEach(function (row) {
+				var input = row.querySelector('[data-field="total"]');
+				if (Object.prototype.hasOwnProperty.call(amounts.items, row.dataset.itemId)) {
+					input.value = money(amounts.items[row.dataset.itemId]);
+					total += amounts.items[row.dataset.itemId];
+				} else {
+					// excluded line: show what it would be, it is not printed
+					input.value = money(scaleCents(base.items[row.dataset.itemId] ? base.items[row.dataset.itemId].amount : 0, percent));
+				}
+			});
+			shippingInput.value = money(amounts.shipping);
+
+			var rows = [];
+			if (base.singleTax) {
+				var taxTotal = amounts.taxes.reduce(function (sum, tax) { return sum + tax.amount; }, 0);
+				if (taxTotal !== 0) {
+					rows.push({ label: base.taxLabel, amount: taxTotal });
+				}
+			} else {
+				amounts.taxes.forEach(function (tax) {
+					if (tax.amount !== 0) {
+						rows.push(tax);
+					}
+				});
+			}
+			rows.forEach(function (tax) {
+				total += tax.amount;
+			});
+			setTaxRows(rows);
+
+			document.getElementById('cifw-total').textContent = money(total) + ' ' + currency;
+		}
+
+		// lock the amount fields while a percentage is selected
+		function applyMode() {
+			var custom = isCustom();
+			modal.querySelectorAll('[data-field="total"]').forEach(function (input) {
+				input.readOnly = !custom;
+			});
+			shippingInput.readOnly = !custom;
+			modal.classList.toggle('cifw-mode-percent', !custom);
+			proportionHint.textContent = custom
+				? t('hintCustom', 'Amounts typed by hand. No tax rows are printed: total = lines + shipping.')
+				: t('hintPercent', 'Every amount of the order (lines, shipping and taxes) is scaled to this percentage.');
+		}
+
 		function recalc() {
+			if (!isCustom()) {
+				recalcProportional(parseInt(proportionSelect.value, 10));
+				return;
+			}
+			setTaxRows([]);
 			var total = 0;
 			modal.querySelectorAll('.cifw-item').forEach(function (row) {
 				var include = row.querySelector('[data-field="include"]').checked;
@@ -68,6 +242,7 @@
 			});
 			return {
 				document_title: document.getElementById('cifw-document-title').value,
+				proportion: proportionSelect.value,
 				shipping: document.getElementById('cifw-shipping').value,
 				items: items
 			};
@@ -106,6 +281,9 @@
 			}
 		});
 
+		// switching to "Custom values" keeps the figures on screen (the scaled
+		// ones) as the starting point for manual editing
+		proportionSelect.addEventListener('change', applyMode);
 		modal.addEventListener('input', recalc);
 		modal.addEventListener('change', recalc);
 

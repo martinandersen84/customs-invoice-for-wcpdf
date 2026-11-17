@@ -19,10 +19,10 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 
 	public function __construct( $order = 0 ) {
 		$this->type  = CIFW_DOCUMENT_TYPE;
-		// deliberately not translated: the PDF is addressed to customs officers,
-		// so the default document title stays in English regardless of the site
-		// locale; it is editable per order and filterable
-		$this->title = apply_filters( 'cifw_default_document_title', 'Customs Invoice', $order );
+		// titled like a regular invoice (translated); editable per order and
+		// filterable. get_title() resolves it again at render time, so an early
+		// instantiation (before translations load) does not stick.
+		$this->title = did_action( 'init' ) ? cifw_default_document_title( $order ) : 'Invoice';
 
 		if ( function_exists( 'WPO_WCPDF' ) ) {
 			$this->icon = WPO_WCPDF()->plugin_url() . '/assets/images/invoice.svg';
@@ -75,11 +75,11 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	 * Document title shown on the PDF; editable per order from the modal.
 	 */
 	public function get_title() {
-		$title = $this->title;
+		$title = cifw_default_document_title( $this->order );
 
 		if ( ! empty( $this->order ) ) {
 			$data = $this->order->get_meta( CIFW_META_KEY );
-			if ( is_array( $data ) && ! empty( $data['document_title'] ) ) {
+			if ( is_array( $data ) && ! empty( $data['document_title'] ) && ! cifw_is_legacy_document_title( $data['document_title'] ) ) {
 				$title = $data['document_title'];
 			}
 		}
@@ -128,7 +128,9 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 			: $this->order_id;
 
 		$suffix   = ! empty( $invoice_number ) ? $invoice_number : $order_number;
-		$filename = 'customs-invoice-' . $suffix . '.pdf';
+		/* translators: filename prefix of the downloaded PDF (lowercase, no spaces), as in "invoice-123.pdf" */
+		$prefix   = _x( 'invoice', 'PDF filename', 'customs-invoice-for-wcpdf' );
+		$filename = apply_filters( 'cifw_filename_prefix', $prefix, $this->order ) . '-' . $suffix . '.pdf';
 
 		$order_ids = isset( $args['order_ids'] ) ? $args['order_ids'] : array( $this->order_id );
 		$filename  = apply_filters( 'wpo_wcpdf_filename', $filename, $this->get_type(), $order_ids, $context, $args );

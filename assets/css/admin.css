@@ -156,3 +156,26 @@
 	pointer-events: none;
 	opacity: 0.7;
 }
+
+/* Invoice amounts (proportion of the order / custom values) */
+
+.cifw-field select {
+	min-width: 220px;
+}
+
+.cifw-hint {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+}
+
+.cifw-items input[readonly] {
+	background: #f6f7f7;
+	color: #50575e;
+	border-color: #dcdcde;
+	box-shadow: none;
+}
+
+.cifw-tax-row td {
+	color: #50575e;
+}

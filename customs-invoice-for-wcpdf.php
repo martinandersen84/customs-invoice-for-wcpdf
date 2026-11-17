@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Customs Invoice for WCPDF
  * Description:       Generates a parallel, customizable customs invoice alongside WooCommerce PDF Invoices & Packing Slips. Same buyer data, invoice number and date; editable product titles, descriptions/materials and amounts. Stored separately — the original invoice is never modified.
- * Version:           0.1.1
+ * Version:           0.2.0
  * Author:            IDEAA Lab
  * Author URI:        https://www.ideaalab.com
  * Text Domain:       customs-invoice-for-wcpdf
@@ -27,7 +27,7 @@ PucFactory::buildUpdateChecker(
 	'customs-invoice-for-wcpdf'
 );
 
-define( 'CIFW_VERSION', '0.1.1' );
+define( 'CIFW_VERSION', '0.2.0' );
 define( 'CIFW_PLUGIN_FILE', __FILE__ );
 define( 'CIFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CIFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -66,6 +66,26 @@ add_action( 'admin_notices', function () {
 		);
 	}
 } );
+
+/**
+ * Default title printed on the PDF: a regular, translated "Invoice", so the
+ * document reads like any other invoice of the shop.
+ */
+function cifw_default_document_title( $order = null ) {
+	return apply_filters( 'cifw_default_document_title', __( 'Invoice', 'customs-invoice-for-wcpdf' ), $order );
+}
+
+/**
+ * Up to 0.1.x the default title was "Customs Invoice" and it was stored with
+ * the order data; treat it as "no custom title" so those orders get the new
+ * default when the PDF is regenerated.
+ */
+function cifw_is_legacy_document_title( $title ) {
+	return 'customs invoice' === strtolower( trim( (string) $title ) );
+}
+
+// Amounts printed on the document (proportion of the order or custom values)
+require_once CIFW_PLUGIN_DIR . 'includes/cifw-amounts.php';
 
 // Settings inheritance: make the customs invoice read the invoice configuration
 require_once CIFW_PLUGIN_DIR . 'includes/cifw-settings.php';
