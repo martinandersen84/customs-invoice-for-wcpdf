@@ -37,8 +37,7 @@ class CIFW_Admin {
 	}
 
 	private function get_default_document_title( $order = null ) {
-		// English on purpose: the PDF is addressed to customs officers (see CIFW_Customs_Invoice)
-		return apply_filters( 'cifw_default_document_title', 'Customs Invoice', $order );
+		return cifw_default_document_title( $order );
 	}
 
 	public function add_meta_box() {
@@ -74,6 +73,8 @@ class CIFW_Admin {
 			'resetConfirm'  => __( 'Reset the customs data to the original order values?', 'customs-invoice-for-wcpdf' ),
 			'resetError'    => __( 'Could not reset.', 'customs-invoice-for-wcpdf' ),
 			'connError'     => __( 'Connection error.', 'customs-invoice-for-wcpdf' ),
+			'hintPercent'   => __( 'Every amount of the order (lines, shipping and taxes) is scaled to this percentage. Choose “Custom values” to type them by hand.', 'customs-invoice-for-wcpdf' ),
+			'hintCustom'    => __( 'Amounts typed by hand. No tax rows are printed: total = lines + shipping.', 'customs-invoice-for-wcpdf' ),
 		) );
 	}
 
@@ -133,13 +134,17 @@ class CIFW_Admin {
 	private function render_modal( $order, $data ) {
 		$items           = $order->get_items();
 		$saved_items     = isset( $data['items'] ) && is_array( $data['items'] ) ? $data['items'] : array();
-		$document_title  = ! empty( $data['document_title'] ) ? $data['document_title'] : $this->get_default_document_title( $order );
+		$document_title  = ! empty( $data['document_title'] ) && ! cifw_is_legacy_document_title( $data['document_title'] )
+			? $data['document_title']
+			: $this->get_default_document_title( $order );
 		$shipping        = isset( $data['shipping'] ) ? $data['shipping'] : wc_format_decimal( $order->get_shipping_total(), 2 );
 		$currency_symbol = get_woocommerce_currency_symbol( $order->get_currency() );
+		$proportion      = cifw_get_proportion( $data );
 		?>
 		<div class="cifw-modal-backdrop" id="cifw-modal" style="display:none"
 			data-order-id="<?php echo esc_attr( $order->get_id() ); ?>"
 			data-currency="<?php echo esc_attr( $currency_symbol ); ?>"
+			data-base="<?php echo esc_attr( wp_json_encode( cifw_get_proportion_base( $order ) ) ); ?>"
 			data-nonce="<?php echo esc_attr( wp_create_nonce( 'cifw_edit_' . $order->get_id() ) ); ?>"
 			data-ajaxurl="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
 			<div class="cifw-modal">
@@ -162,6 +167,22 @@ class CIFW_Admin {
 					<p class="cifw-field">
 						<label><?php esc_html_e( 'Document title', 'customs-invoice-for-wcpdf' ); ?></label>
 						<input type="text" id="cifw-document-title" value="<?php echo esc_attr( $document_title ); ?>">
+					</p>
+
+					<p class="cifw-field">
+						<label for="cifw-proportion"><?php esc_html_e( 'Invoice amounts', 'customs-invoice-for-wcpdf' ); ?></label>
+						<select id="cifw-proportion">
+							<?php foreach ( cifw_proportion_options() as $percent ) : ?>
+								<option value="<?php echo esc_attr( $percent ); ?>" <?php selected( $proportion, $percent ); ?>>
+									<?php
+									/* translators: %d: percentage of the order amounts, e.g. "30 %" */
+									echo esc_html( sprintf( __( '%d%%', 'customs-invoice-for-wcpdf' ), $percent ) );
+									?>
+								</option>
+							<?php endforeach; ?>
+							<option value="custom" <?php selected( $proportion, 'custom' ); ?>><?php esc_html_e( 'Custom values', 'customs-invoice-for-wcpdf' ); ?></option>
+						</select>
+						<span class="cifw-hint cifw-muted" id="cifw-proportion-hint"></span>
 					</p>
 
 					<table class="cifw-items">
@@ -283,14 +304,32 @@ class CIFW_Admin {
 			}
 		}
 
+		// only a title that differs from the default is stored, so the default
+		// keeps following the locale (and the filter)
+		$title = isset( $raw['document_title'] ) ? sanitize_text_field( $raw['document_title'] ) : '';
+		if ( '' === trim( $title ) || $title === $this->get_default_document_title( $order ) || cifw_is_legacy_document_title( $title ) ) {
+			$title = '';
+		}
+
 		$data = array(
-			'document_title' => isset( $raw['document_title'] ) && '' !== trim( $raw['document_title'] )
-				? sanitize_text_field( $raw['document_title'] )
-				: $this->get_default_document_title( $order ),
+			'document_title' => $title,
+			'proportion'     => cifw_sanitize_proportion( isset( $raw['proportion'] ) ? $raw['proportion'] : 100 ),
 			'shipping'       => isset( $raw['shipping'] ) && '' !== $raw['shipping'] ? wc_format_decimal( $raw['shipping'], 2 ) : '0',
 			'items'          => $items,
 			'updated_at'     => time(),
 		);
+
+		// proportion mode: store the scaled amounts the PDF will print, so the
+		// saved data is self-consistent and "Custom values" starts from them
+		if ( 'custom' !== $data['proportion'] ) {
+			$amounts = cifw_get_invoice_amounts( $order, $data );
+			foreach ( $data['items'] as $item_id => $item ) {
+				if ( isset( $amounts['items'][ $item_id ] ) ) {
+					$data['items'][ $item_id ]['total'] = wc_format_decimal( cifw_from_cents( $amounts['items'][ $item_id ]['amount'] ), 2 );
+				}
+			}
+			$data['shipping'] = wc_format_decimal( cifw_from_cents( $amounts['shipping'] ), 2 );
+		}
 
 		$order->update_meta_data( CIFW_META_KEY, $data );
 		$order->save_meta_data();
@@ -339,6 +378,12 @@ class CIFW_Admin {
 					/* translators: %s: directory path */
 					'message' => sprintf( __( 'Could not write the PDF to %s', 'customs-invoice-for-wcpdf' ), $dir ),
 				), 500 );
+			}
+
+			// the filename may change (e.g. 0.1.x "customs-invoice-…"): drop the old copy
+			$previous = basename( (string) $order->get_meta( '_cifw_pdf_file' ) );
+			if ( $previous && $previous !== $filename && file_exists( trailingslashit( $dir ) . $previous ) ) {
+				wp_delete_file( trailingslashit( $dir ) . $previous );
 			}
 
 			$order->update_meta_data( '_cifw_pdf_file', $filename );

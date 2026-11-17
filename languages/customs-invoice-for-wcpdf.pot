@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Customs Invoice for WCPDF 0.1.1
+"Project-Id-Version: Customs Invoice for WCPDF 0.2.0
 "
 "MIME-Version: 1.0
 "
@@ -144,4 +144,27 @@ msgid "Invalid request."
 msgstr ""
 
 msgid "The customs PDF does not exist. Generate it from the order."
+msgstr ""
+
+msgid "Invoice"
+msgstr ""
+
+msgctxt "PDF filename"
+msgid "invoice"
+msgstr ""
+
+msgid "Invoice amounts"
+msgstr ""
+
+#, php-format
+msgid "%d%%"
+msgstr ""
+
+msgid "Custom values"
+msgstr ""
+
+msgid "Every amount of the order (lines, shipping and taxes) is scaled to this percentage. Choose “Custom values” to type them by hand."
+msgstr ""
+
+msgid "Amounts typed by hand. No tax rows are printed: total = lines + shipping."
 msgstr ""
