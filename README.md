@@ -3,9 +3,9 @@
 Generates a parallel, customizable **customs invoice** alongside [WooCommerce PDF Invoices & Packing Slips](https://wordpress.org/plugins/woocommerce-pdf-invoices-packing-slips/) (WP Overnight). Customs authorities increasingly require a description and list of materials for every product; this plugin lets you edit the product titles, descriptions and amounts of a per-order customs document **without ever touching the real invoice**.
 
 - **Slug:** `customs-invoice-for-wcpdf`
-- **Version:** 0.2.0
+- **Version:** 0.2.1
 - **Author:** IDEAA Lab
-- **Requires:** WordPress 6.0+, PHP 7.4+, WooCommerce, WooCommerce PDF Invoices & Packing Slips 4.0+ (free or Pro)
+- **Requires:** WordPress 6.0+, PHP 8.0+, WooCommerce, WooCommerce PDF Invoices & Packing Slips 4.0+ (free or Pro)
 - **Text domain:** `customs-invoice-for-wcpdf` (English source, Spanish `es_ES` translation bundled)
 
 ## Features
@@ -69,6 +69,10 @@ The default document title printed on the PDF (*Invoice*) and the filename prefi
 Updates are delivered from this GitHub repository via the bundled [plugin-update-checker](https://github.com/YahnisElsts/plugin-update-checker); they appear in the regular WordPress updates screen. To ship a new version: bump the `Version:` header, commit, and push a `v*` tag — the release workflow builds the ZIP automatically.
 
 ## Changelog
+
+### 0.2.1
+- Compatible with WooCommerce PDF Invoices & Packing Slips 6.0. Version 6.0 added return types to its document classes, and the customs invoice document did not declare them, which caused a fatal error and blocked the 6.0 update. The document now declares the same types. Still works with 5.x.
+- Requires PHP 8.0+ (WCPDF 6.0 itself requires 8.1).
 
 ### 0.2.0
 - New **Invoice amounts** selector in the modal: 10 %…100 % of the order, scaling line prices, shipping and taxes with consistent rounding, or *Custom values* (the previous manual editing). Remembered per order; 100 % by default.
