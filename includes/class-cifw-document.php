@@ -35,35 +35,40 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	 * Settings come from the virtual option filtered in cifw-settings.php
 	 * (the invoice settings, minus automation), merged by the parent with the
 	 * common settings. Nothing document-specific is stored for this type.
+	 *
+	 * Return types match WCPDF 6.x, which declares them on every method; they
+	 * are also valid against 5.x, whose methods have none. Parameters stay
+	 * untyped on purpose: that is compatible with both (a child may widen a
+	 * parameter, never narrow it).
 	 */
 
-	public function use_historical_settings() {
+	public function use_historical_settings(): bool {
 		return false;
 	}
 
-	public function storing_settings_enabled() {
+	public function storing_settings_enabled(): bool {
 		return false;
 	}
 
-	public function is_enabled( $output_format = 'pdf' ) {
-		return apply_filters( 'wpo_wcpdf_document_is_enabled', true, $this->type, $output_format );
+	public function is_enabled( $output_format = 'pdf' ): bool {
+		return (bool) apply_filters( 'wpo_wcpdf_document_is_enabled', true, $this->type, $output_format );
 	}
 
-	public function is_allowed() {
-		return apply_filters( 'wpo_wcpdf_document_is_allowed', true, $this );
+	public function is_allowed(): bool {
+		return (bool) apply_filters( 'wpo_wcpdf_document_is_allowed', true, $this );
 	}
 
 	/**
 	 * Never attach this document to WooCommerce emails.
 	 */
-	public function get_attach_to_email_ids( $output_format = 'pdf' ) {
+	public function get_attach_to_email_ids( $output_format = 'pdf' ): array {
 		return array();
 	}
 
 	/**
 	 * The document "exists" once customs data has been saved for the order.
 	 */
-	public function exists() {
+	public function exists(): bool {
 		if ( empty( $this->order ) ) {
 			return false;
 		}
@@ -74,7 +79,7 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	/**
 	 * Document title shown on the PDF; editable per order from the modal.
 	 */
-	public function get_title() {
+	public function get_title(): string {
 		$title = cifw_default_document_title( $this->order );
 
 		if ( ! empty( $this->order ) ) {
@@ -84,14 +89,14 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 			}
 		}
 
-		return apply_filters( 'wpo_wcpdf_document_title', $title, $this );
+		return (string) apply_filters( 'wpo_wcpdf_document_title', $title, $this );
 	}
 
 	/**
 	 * Same number as the real invoice: requests for this document's own number
 	 * are redirected to the linked invoice document (read-only).
 	 */
-	public function get_number( $document_type = '', $order = null, $context = 'view', $formatted = false ) {
+	public function get_number( $document_type = '', $order = null, $context = 'view', $formatted = false ): mixed {
 		if ( empty( $document_type ) || $document_type === $this->type ) {
 			$document_type = 'invoice';
 		}
@@ -101,7 +106,7 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	/**
 	 * Same date as the real invoice (see get_number()).
 	 */
-	public function get_date( $document_type = '', $order = null, $context = 'view', $formatted = false ) {
+	public function get_date( $document_type = '', $order = null, $context = 'view', $formatted = false ): mixed {
 		if ( empty( $document_type ) || $document_type === $this->type ) {
 			$document_type = 'invoice';
 		}
@@ -111,17 +116,17 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	/**
 	 * The number shown is the invoice number, so label it as such.
 	 */
-	public function get_number_title() {
+	public function get_number_title(): string {
 		$title = __( 'Invoice Number:', 'woocommerce-pdf-invoices-packing-slips' );
-		return apply_filters( 'wpo_wcpdf_document_number_title', $title, $this );
+		return (string) apply_filters( 'wpo_wcpdf_document_number_title', $title, $this );
 	}
 
-	public function get_date_title() {
+	public function get_date_title(): string {
 		$title = __( 'Invoice Date:', 'woocommerce-pdf-invoices-packing-slips' );
-		return apply_filters( 'wpo_wcpdf_document_date_title', $title, $this );
+		return (string) apply_filters( 'wpo_wcpdf_document_date_title', $title, $this );
 	}
 
-	public function get_filename( $context = 'download', $args = array() ) {
+	public function get_filename( $context = 'download', $args = array() ): string {
 		$invoice_number = $this->get_number( 'invoice', null, 'view', true );
 		$order_number   = ! empty( $this->order ) && is_callable( array( $this->order, 'get_order_number' ) )
 			? $this->order->get_order_number()
@@ -142,7 +147,7 @@ class CIFW_Customs_Invoice extends OrderDocumentMethods {
 	 * No own number/date sequence to initiate: everything comes from the
 	 * invoice document, and the customs data lives in our own order meta.
 	 */
-	public function init() {
+	public function init(): void {
 		do_action( 'wpo_wcpdf_init_document', $this );
 	}
 }
